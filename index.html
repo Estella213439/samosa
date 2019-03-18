@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<style type="text/css">
+        h1 {
+            color: #36454f;
+        }
+ 
+        #map {
+            height: 800px;
+            width: 100%;
+            background-color: blue;
+ 
+        }
+    </style>
+  </head>
+  <body>
+     <link rel="stylesheet" type="text/css" href="style.css"
+ 
+    <div class="container">
+      <div class="box-1">
+ 
+    <p1> Event Mapper </p1>
+    <p> Never miss out on an event again! Open up this app and what's around you in real-time, be it a samosa sale, a thrifting event on campus, Montreal en Lumiere, Coldplay, or your favourite author giving a talk at Anticafe! </p>
+    
+    Event Name:<br>
+      <Input id = 'Name' type='text' name ='Event name'><br>
+      <br>Description:<br></Input>
+      <textarea id = 'Description' type ='text' name ='Description'>
+      </textarea>
+       <br><br>Date:<br>
+       <Input id = 'Date' type='text' name ='Date'><br>
+       <br>Begin Time:<br>
+       <Input id = 'beginHour' type='text'>：<Input id = 'beginMin' type='text'><br>
+       
+       <br> End Time:<br>
+       <Input id = 'endHour' type='text'>：<Input id = 'endMin' type='text'><br>
+     	<br>
+     
+        Location:
+       <Input id='site' type='text' name ='site'><br>
+       <button id = "Search">Submit</button><br>
+
+       <br><br><br>
+
+
+       
+       <div id="map"></div>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+	<script src="https://www.gstatic.com/firebasejs/4.10.1/firebase.js"></script>
+	<script>
+		  	// Initialize Firebase
+  	var config = {
+  	    apiKey: "AIzaSyBuS9glEWKzcoO14GoNVzdjAy9rpwp2hRs",
+  	    authDomain: "samosa-6599c.firebaseapp.com",
+  	    databaseURL: "https://samosa-6599c.firebaseio.com",
+  	    projectId: "samosa-6599c",
+  	    storageBucket: "",
+  	    messagingSenderId: "122921445554"
+  	};
+
+  	firebase.initializeApp(config);
+
+  	var database = firebase.database();
+
+  	var map;
+
+  	var list = [];
+
+  	database.ref("location").on('value', function(snapshot) {
+  	    list = snapshot.val();
+  	    for (let i of list) {
+  	        let marker = new google.maps.Marker({
+  	            position: {
+  	                lat: i.Latitude,
+  	                lng: i.Longtitude
+  	            },
+  	            map: map
+  	        })
+  	        let contentString = "Name: " + i.Name + '<br>' + "Description: " + i.Description + '<br>' + "Date: " + i.Date + '<br>' + "Time: " + i.Time;
+
+  	        let infowindow = new google.maps.InfoWindow({
+  	            content: contentString
+  	        });
+  	        marker.addListener('click', function() {
+  	            infowindow.open(map, marker);
+  	        });
+  	    }
+  	})
+
+
+  	$("#Search").click(function () {
+  		 infowindow = new google.maps.InfoWindow();
+         var service = new google.maps.places.PlacesService(map);
+         service.nearbySearch({
+	         keyword: $('#site').val(),
+	         radius: 10000,
+	         location: new google.maps.LatLng(45.5017, -73.5673)
+	     }, callback);
+      
+
+	    function callback(results, status) {
+	    	console.log(results);
+	        if (status === google.maps.places.PlacesServiceStatus.OK) {
+	        	createMarker(results[0]);	
+	        }
+	    }
+
+	    function createMarker(place) {
+	       var placeLoc = place.geometry.location;
+	       var Latitude = placeLoc.lat()
+	       var Longitude = placeLoc.lng()
+	       
+  		var item = {
+  	        name: $('#Name').val(),
+  	        Description: $('#Description').val(),
+  	        Date: $('#Date').val(),
+  	        Time: $('#beginHour').val()+":"+$('#beginMin').val() + "~" + $('#endHour').val() + ":" + $('#endMin').val(),
+  	        Latitude: placeLoc.lat(),
+  	        Longtitude: placeLoc.lng()
+  	    };
+  	    var center = new google.maps.LatLng(item.Latitude,item.Longtitude)
+  	    map.panTo(center);
+  	    list.push(item)
+  	    database.ref("location").set(list)
+  	}})
+
+  	function initMap() {
+  	    map = new google.maps.Map(document.getElementById('map'), {
+  	        zoom: 10,
+  	        center: {
+  	            lat: 45.5017,
+  	            lng: -73.5673
+  	        }
+  	    });
+  	    //Get system local time
+  	    var d = new Date();
+  	    var m = d.getMinutes();
+  	    var h = d.getHours();
+  	    if (h == '0') {
+  	        h = 24
+  	    }
+  	    var currentTime = h + "." + m;
+  	    currentTime = parseInt(currentTime);
+  	    console.log(currentTime);
+  	    //Caclulate
+  	    for (i of list) {
+  	        if (i.Endtime - currentTime <= 0) {
+  	            list.splice(i, 1);
+  	        }
+  	    };
+  	}
+
+
+
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTAIqfuzpdd3R-7JRj6_B2rM4PCpN-L08&libraries=places&callback=initMap">
+    </script>
+  </body>
+</html>
